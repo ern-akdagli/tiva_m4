@@ -1,0 +1,43 @@
+#include <stdint.h>
+#include "inc/tm4c123gh6pm.h"
+
+void Clock_Init(void);
+
+void main(void)
+{
+    Clock_Init(); // Saat ayarını yap
+    while (1)
+    {
+        // Uygulamanız burada çalışır
+    }
+}
+
+void Clock_Init(void)
+{
+    // 1. Ana osilatörü etkinleştir
+    SYSCTL_RCC_R &= ~SYSCTL_RCC_MOSCDIS; // Main Oscillator Enable (MOSCEN)
+
+    // 2. RCC2'yi etkinleştir ve bypass modunu seç
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_USERCC2;   // RCC2'yi etkinleştir
+    SYSCTL_RCC_R |= SYSCTL_RCC_BYPASS;     // PLL bypass modunu etkinleştir
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_BYPASS2;  // RCC2 için PLL bypass modunu etkinleştir
+
+    // 3. Kristal frekansını ayarla (16 MHz XTAL) ve osilatör kaynağını seç
+    SYSCTL_RCC_R &= ~SYSCTL_RCC_XTAL_M;             // XTAL alanını temizle
+    SYSCTL_RCC_R |= SYSCTL_RCC_XTAL_16MHZ;          // XTAL = 16 MHz
+    SYSCTL_RCC2_R &= ~SYSCTL_RCC2_OSCSRC2_M;        // Osilatör kaynağını temizle
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_OSCSRC2_MO;        // Ana osilatörü seç (MOSC)
+
+    // 4. PLL bölme oranını ayarla
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_DIV400;          // PLL 400 MHz modunda çalışacak
+    SYSCTL_RCC2_R &= ~SYSCTL_RCC2_SYSDIV2_M;      // Bölücü alanını temizle
+    SYSCTL_RCC2_R |= (7 << SYSCTL_RCC2_SYSDIV2_S); // PLL çıkışını 50 MHz'e böl (SYSDIV = 7)
+
+    // 5. PLL'yi etkinleştir ve stabil hale gelmesini bekle
+    SYSCTL_RCC2_R &= ~SYSCTL_RCC2_PWRDN2;         // PLL'yi etkinleştir
+    while (!(SYSCTL_RIS_R & SYSCTL_RIS_PLLLRIS)); // PLL hazır bayrağını kontrol et
+
+    // 6. Bypass modunu kapat ve PLL'yi sistem saati kaynağı olarak seç
+    SYSCTL_RCC_R &= ~SYSCTL_RCC_BYPASS;          // PLL bypass modunu devre dışı bırak
+    SYSCTL_RCC2_R &= ~SYSCTL_RCC2_BYPASS2;       // RCC2 için PLL bypass modunu kapat
+}

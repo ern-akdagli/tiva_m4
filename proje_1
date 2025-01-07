@@ -1,4 +1,4 @@
-//karekter lcd ile 4bit veri hattı uzerinden haberlesme
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_types.h"
